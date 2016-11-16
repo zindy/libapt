@@ -192,6 +192,15 @@ long WINAPI APTInit(void) {
     long int ret, i;
     long retval = EXIT_SUCCESS;
     struct ftdi_device_list *curdev;
+    struct ftdi_version_info version;
+
+    if (DEBUG) {
+        version = ftdi_get_library_version();
+        printf("Initialized libftdi %s (major: %d, minor: %d, micro: %d, snapshot ver: %s)\n",
+            version.version_str, version.major, version.minor, version.micro,
+            version.snapshot_str);
+    }
+
     char manufacturer[128], description[128], serialno[128];
 
     // create the device information list 
@@ -244,9 +253,7 @@ end:
 
 long WINAPI APTCleanUp(void) {
     long ret = 0;
-    //long i;
 
-    //if (devInfo != NULL) free(devInfo);
     numDevs = 0;
     if (aptInfo != NULL) free(aptInfo);
 
@@ -267,12 +274,19 @@ long WINAPI GetNumHWUnitsEx(long lHWType, long *plNumUnits) {
     long i, ret=0;
     long nDevices = 0;
 
+    //This allows to get the total number of devices
+    if (lHWType == 0) {
+        nDevices = numDevs;
+        goto end;
+    }
+
     for (i=0;i<numDevs;i++) {
-        if (aptInfo[i].HardwareType == lHWType) {
+        if (aptInfo[i].Type == lHWType) {
             nDevices += 1;
         }
     }
 
+end:
     *plNumUnits = nDevices;
     return ret;
 }
@@ -284,7 +298,7 @@ long WINAPI GetHWSerialNumEx(long lHWType, long lIndex, long *plSerialNum) {
 
     j = 0;
     for (i=0;i<numDevs;i++) {
-        if (aptInfo[i].HardwareType == lHWType) {
+        if (aptInfo[i].Type == lHWType) {
             if (j == lIndex) {
                 *plSerialNum = aptInfo[i].SerialNumber;
                 ret = 0;
@@ -299,6 +313,8 @@ long WINAPI GetHWSerialNumEx(long lHWType, long lIndex, long *plSerialNum) {
 
 long WINAPI GetHWInfo(long lSerialNum, TCHAR *szModel, long lModelLen, TCHAR *szSWVer, long lSWVerLen, TCHAR *szHWNotes, long lHWNotesLen) {
     long i, ret = 0;
+
+    //MGMSG_HW_REQ_INFO
     char txbuf[6] ={0x05,0x00,0x00,0x00,0x50,0x01};
     GetIndex(lSerialNum, &i);
 
@@ -333,6 +349,7 @@ long WINAPI InitHWDevice(long lSerialNum) {
     long i, ret = 0;
     GetIndex(lSerialNum, &i);
 
+    //MGMSG_HW_REQ_INFO
     char txbuf[6] ={0x05,0x00,0x00,0x00,0x50,0x01};
 
     if ((ret = ftdi_open_apt_index(i)) < 0)
@@ -363,6 +380,30 @@ long WINAPI InitHWDevice(long lSerialNum) {
     aptInfo[i].ModState = *(unsigned short int *)(rxbuf+86);
     aptInfo[i].NumberChannels = *(unsigned short int *)(rxbuf+88);
     aptInfo[i].ChannelId = 0;
+
+    if (DEBUG) {
+        printf(" APT SerialNumber=%ld\n",aptInfo[i].SerialNumber);
+        printf(" APT Model Number='%s'\n",aptInfo[i].ModelNumber);
+        printf(" APT Type=%ld\n",aptInfo[i].Type);
+        printf(" APT HardwareType=%ld\n",aptInfo[i].HardwareType);
+        printf(" APT FirmwareVersion='%s'\n",aptInfo[i].FirmwareVersion);
+        printf(" APT Notes='%s'\n",aptInfo[i].Notes);
+        printf(" APT HardwareVersion=%ld\n",aptInfo[i].HardwareVersion);
+        printf(" APT ModState=%ld\n",aptInfo[i].ModState);
+        printf(" APT Number of Channels=%ld\n",aptInfo[i].NumberChannels);
+
+        /*
+        printf(" Stage PartNoAxis='%s'\n",aptInfo[i].PartNoAxis);
+        printf(" Stage SerialNumAxis=%ld\n",aptInfo[i].SerialNumAxis);
+        printf(" Stage CntsPerUnit=%ld\n",aptInfo[i].CntsPerUnit);
+        printf(" Stage MinPos=%ld\n",aptInfo[i].MinPos);
+        printf(" Stage MaxPos=%ld\n",aptInfo[i].MaxPos);
+        printf(" Stage MaxAccn=%ld\n",aptInfo[i].MaxAccn);
+        printf(" Stage MaxDec=%ld\n",aptInfo[i].MaxDec);
+        printf(" Stage MaxVel=%ld\n",aptInfo[i].MaxVel);
+        */
+    }
+
     ret = 0;
 end:
     if (ret < 0) fprintf(stderr," (%s)\n",ftdi_get_error_string(ftdic));
