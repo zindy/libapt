@@ -25,11 +25,23 @@ Still, you should be able to initialize the stage, home it, set positions, etc. 
 
 Other things I still need to look at: I have a very limited understanding of Autoconf. If someone wants to help with that, please send me a pull request. I think I wrote enough code to do a autoreconf -fvi;./configure;make;make install but there are no usable Python SWIG bindings, and I haven't worked-out yet how to reintegrate the main() part of my test_main.c with the libapt library.
 
-As I said before, I'll spare whatever time I can on this project but don't expect too much. For now if you want to test this, you can type:
+As I said before, I'll spare whatever time I can on this project but don't expect too much. For now if you want to test this, you can type (to make libapt.so and install it):
 
-gcc -o test_main src/test_main.c src/hexdump.c -I/usr/include/libftdi1 -lftdi1
+```
+autoreconf -fvi
+./configure
+make
+sudo make install
+```
 
+Then if you want to run the sample application, type:
+```
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib"
+gcc -o test_main src/test_main.c -lapt
 ./test_main
+```
+
+We're getting close everyone! :-)
 
 ##Contrib files
 * Download [from Thorlabs](https://www.thorlabs.de/software_pages/ViewSoftwarePage.cfm?Code=apt). In particular, the [protocol manual](https://www.thorlabs.de/software/apt/APT_Communications_Protocol_Rev_19.pdf) (v19).
