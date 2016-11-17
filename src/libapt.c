@@ -67,7 +67,7 @@ typedef struct {
      long MaxVel;
 } MY_APT_INFO;
 
-int DEBUG = false;
+int DEBUG = true;
 int numDevs = 0;
 struct ftdi_context *ftdic = NULL;
 struct ftdi_device_list *devlist = NULL;
@@ -190,7 +190,6 @@ long GetIndex(long lSerialNum, long *index) {
 
 long WINAPI APTInit(void) {
     long int ret, i;
-    long retval = EXIT_SUCCESS;
     struct ftdi_device_list *curdev;
     struct ftdi_version_info version;
 
@@ -294,7 +293,15 @@ end:
 
 long WINAPI GetHWSerialNumEx(long lHWType, long lIndex, long *plSerialNum) {
     long i,j, ret=-1;
-    long nDevices = 0;
+
+    if (lHWType == 0 && numDevs > 0) {
+        if (lIndex < 0) lIndex = 0;
+        else if (lIndex >= numDevs)
+            lIndex = numDevs - 1;
+        *plSerialNum = aptInfo[lIndex].SerialNumber;
+        ret = 0;
+        goto end;
+    }
 
     j = 0;
     for (i=0;i<numDevs;i++) {
@@ -307,6 +314,8 @@ long WINAPI GetHWSerialNumEx(long lHWType, long lIndex, long *plSerialNum) {
             j = j+1;
         }
     }
+
+end:
     return ret;
 }
 

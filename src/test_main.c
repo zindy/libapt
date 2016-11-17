@@ -30,18 +30,15 @@
 
 int main() {
     long i, ret, nDevices, SerialNumber;
-    long hwType = HWTYPE_TDC001;
+    long hwType = HWTYPE_ANY;
 
     ret = APTInit();
     if (ret < 0)
         goto end;
 
 
-    ret = GetNumHWUnitsEx(HWTYPE_ANY, &nDevices);
+    ret = GetNumHWUnitsEx(hwType, &nDevices);
     printf("Number of Thorlabs devices found: %ld\n", nDevices);
-
-    ret = GetNumHWUnitsEx(hwType,&nDevices);
-    printf("\nNumber of TDC001 devices: %ld\n",nDevices);
 
     for (i = 0; i < nDevices; i++) { 
         ret = GetHWSerialNumEx(hwType, i, &SerialNumber);
